@@ -63,7 +63,7 @@ namespace FS_ThirdPerson
         bool interactionButtonDown;
 
         public string InteractionKeyName { get; private set; }
-
+        // --- Super Jump (double-tap) ---
 #if inputsystem
         FSSystemsInputAction input;
         private void OnEnable()
@@ -162,16 +162,18 @@ namespace FS_ThirdPerson
             CameraInput = new Vector2(x, y) * 10;
 #endif
         }
-
         void HandleJumpKeyDown()
         {
 #if inputsystem
             JumpKeyDown = input.Locomotion.Jump.WasPressedThisFrame();
-#else
-            JumpKeyDown = Input.GetKeyDown(jumpKey) || (String.IsNullOrEmpty(jumpButton) ? false : Input.GetButtonDown(jumpButton));
-#endif
-        }
 
+#else
+    JumpKeyDown = Input.GetKeyDown(jumpKey) || (String.IsNullOrEmpty(jumpButton) ? false : Input.GetButtonDown(jumpButton));
+#endif
+
+            // one-frame pulse when second tap happens within the window
+            
+        }
         void HandleDrop()
         {
 #if inputsystem

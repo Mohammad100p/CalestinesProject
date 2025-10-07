@@ -66112,6 +66112,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: -0
       objectReference: {fileID: 0}
+    - target: {fileID: 2546353011307697568, guid: 7e7a6e7cde54ab441ab0649452a3d169, type: 3}
+      propertyPath: superJumpDoubleTapWindow
+      value: 0.25
+      objectReference: {fileID: 0}
     - target: {fileID: 7674065066836908783, guid: 7e7a6e7cde54ab441ab0649452a3d169, type: 3}
       propertyPath: swingForce
       value: 10
@@ -66119,6 +66123,14 @@ PrefabInstance:
     - target: {fileID: 8332313397563843641, guid: 7e7a6e7cde54ab441ab0649452a3d169, type: 3}
       propertyPath: jumpMoveSpeed
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8332313397563843641, guid: 7e7a6e7cde54ab441ab0649452a3d169, type: 3}
+      propertyPath: superJumpHeight
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8332313397563843641, guid: 7e7a6e7cde54ab441ab0649452a3d169, type: 3}
+      propertyPath: superJumpCooldown
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 8403537069546553754, guid: 7e7a6e7cde54ab441ab0649452a3d169, type: 3}
       propertyPath: m_Name
