@@ -8,4 +8,13 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/1 - Main Demo Scene.unity
     guid: 7d1f61e5a6114404f8043c9f9fac31d3
+  - enabled: 1
+    path: Assets/Scenes/Park.unity
+    guid: 0e75f1f61a976bb43b35fe3e96292a80
+  - enabled: 1
+    path: Assets/Realistic Car Controller Pro/Addons/Installed/Demo Content/Scenes/RCCP_Scene_CityNew.unity
+    guid: dcf704fd90693194bb0f78092d1ae4ee
+  - enabled: 1
+    path: Assets/Realistic Car Controller Pro/Addons/Installed/Demo Content/Scenes/RCCP_Scene_Blank_Customization.unity
+    guid: 72c6733c8b527e34590360a648a1120a
   m_configObjects: {}
