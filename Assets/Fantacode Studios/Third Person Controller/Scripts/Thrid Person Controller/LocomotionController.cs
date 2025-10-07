@@ -222,7 +222,10 @@ namespace FS_ThirdPerson
         EnvironmentScanner environmentScanner;
         LocomotionInputManager inputManager;
         ItemEquipper itemEquipper;
-
+        // Super Jump
+        [Header("Super Jump")]
+        [Tooltip("Jump height in meters for super jump (normal jump uses 'jumpMoveSpeed' as height).")]
+        public float superJumpHeight = 6f;
         private void Awake()
         {
             playerController = GetComponent<PlayerController>();
@@ -241,9 +244,9 @@ namespace FS_ThirdPerson
             _sprintSpeed = sprintSpeed;
             maxSpeed = _sprintSpeed;
 
-            
+
             cameraGameObject = playerController.cameraGameObject;
-            
+
             controllerDefaultHeight = characterController.height;
             controllerDefaultYOffset = characterController.center.y;
             if (!(groundLayer == (groundLayer | (1 << LayerMask.NameToLayer("Ledge")))))
@@ -303,6 +306,7 @@ namespace FS_ThirdPerson
             }
 #endif
         }
+        int numOfTimesJumpPressed = 0;
 
         public override void HandleUpdate()
         {
@@ -326,6 +330,7 @@ namespace FS_ThirdPerson
             {
                 playerController.OnLand?.Invoke(Mathf.Clamp(Mathf.Abs(ySpeed) * 0.0007f, 0.0f, 0.01f), 1f);
                 StartCoroutine(Landing());
+                numOfTimesJumpPressed = 0;
                 return;
             }
             if (!isGrounded && wasGroundedPreviously)
@@ -334,12 +339,19 @@ namespace FS_ThirdPerson
             }
 
             desiredVelocity = Vector3.zero;
-
             if (inputManager.JumpKeyDown)
             {
-                VerticalJump();
+                numOfTimesJumpPressed++;
+                if (numOfTimesJumpPressed == 2)
+                {
+                    SuperJump();
+                }
+                else if (numOfTimesJumpPressed == 1)
+                {
+                   VerticalJump();
+                }
             }
-
+            
             if (isGrounded)
             {
                 ySpeed = Gravity / 2;
@@ -511,7 +523,7 @@ namespace FS_ThirdPerson
             else
                 targetRotation = transform.rotation;
 
-            if(playerController.CurrentEquippedSystem == null)
+            if (playerController.CurrentEquippedSystem == null)
                 playerController.AlignTargetWithCameraForward = (useMultiDirectionalAnimation && faceCameraForwardWhenIdle) || playerController.CameraType == FSCameraType.FirstPerson;
         }
         void SetTargetRotation(Vector3 moveDir, ref Quaternion targetRotation)
@@ -564,7 +576,7 @@ namespace FS_ThirdPerson
 
             crouchVal = hitCount > 2 ? crouchMode ? 0.5f : 0f : 1f;
             //crouchVal = hitCount > 2 ? 0f : 1f;
-            animator.SetFloat(AnimatorParameters.idleType, crouchVal, 0.2f, Time.deltaTime); 
+            animator.SetFloat(AnimatorParameters.idleType, crouchVal, 0.2f, Time.deltaTime);
             if (animator.GetFloat(AnimatorParameters.idleType) > .2f)
             {
                 var hasSpace = leftFootHit && rightFootHit;
@@ -775,35 +787,40 @@ namespace FS_ThirdPerson
             jumpMaxPosY = transform.position.y - 1;
         }
 
+     
         void VerticalJump()
         {
             if (!verticalJump || !IsGrounded || playerController.PreventVerticalJump) return;
             var headHit = Physics.SphereCast(animator.GetBoneTransform(HumanBodyBones.Head).position, .15f, Vector3.up, out RaycastHit headHitData, headHeightThreshold, environmentScanner.ObstacleLayer);
             if (!headHit)
-                StartCoroutine(HandleVerticalJump());
+                StartCoroutine(HandleVerticalJump(jumpMoveSpeed)); // normal jump height
         }
-
-        public IEnumerator HandleVerticalJump()
+        void SuperJump()
+        {
+            Debug.Log("Vertical Super Jump");
+            //if (!IsGrounded) return;
+            var headHit = Physics.SphereCast(animator.GetBoneTransform(HumanBodyBones.Head).position, .15f, Vector3.up, out RaycastHit headHitData, headHeightThreshold, environmentScanner.ObstacleLayer);
+            if (!headHit)
+                StartCoroutine(HandleVerticalJump(superJumpHeight)); // taller jump
+        }
+        public IEnumerator HandleVerticalJump(float jumpHeightMeters)
         {
             yield return new WaitForFixedUpdate();
 
             if (playerController.CurrentSystemState != SystemState.Locomotion) yield break;
 
             var velocity = Vector3.zero;
-            //Calculates the initial vertical velocity required f   or jumping
-            //var velocityY = Mathf.Abs(Gravity) * timeToJump;
-            var velocityY = Mathf.Sqrt(2 * Mathf.Abs(Gravity) * jumpMoveSpeed);
+
+            // Compute initial vertical velocity from desired height: v = sqrt(2*g*h)
+            var velocityY = Mathf.Sqrt(2f * Mathf.Abs(Gravity) * Mathf.Max(0.01f, jumpHeightMeters));
+
             preventLocomotion = true;
             currentVelocity *= 0.5f;
             animator.SetBool(AnimatorParameters.IsGrounded, false);
 
-            //animator.SetFloat(AnimatorParameters.moveAmount, 0);
             isGrounded = false;
             animator.CrossFadeInFixedTime("FallTree", .12f);
 
-            var characterVelocity = characterController.velocity;
-
-            //yield return new WaitForSeconds(0.1f);
             var time = 0f;
             while ((time += Time.deltaTime) <= 0.1f)
             {
@@ -817,26 +834,63 @@ namespace FS_ThirdPerson
                 }
             }
             preventLocomotion = false;
-            ySpeed = velocityY;
-            //while (characterController.velocity.y <= velocityY)
-            //{
-            //    characterController.velocity.y,velocityY,1f*Time.deltaTime);
-            //    yield return null;
-            //}
-            //while (!isGrounded)
-            //{
-
-            //    yield return null;
-
-            //    if (playerController.CurrentSystemState != State)
-            //        yield break;
-            //}
-            //targetRotation = transform.rotation;
-            //playerController.IsInAir = false;
-            //yield return VerticalJumpLanding();
-            ////parkourController.IsJumping = false;
-            //preventLocomotion = false;
+            ySpeed = velocityY; // launch!
         }
+
+        //public IEnumerator HandleVerticalJump()
+        //{
+        //    yield return new WaitForFixedUpdate();
+
+        //    if (playerController.CurrentSystemState != SystemState.Locomotion) yield break;
+
+        //    var velocity = Vector3.zero;
+        //    //Calculates the initial vertical velocity required f   or jumping
+        //    //var velocityY = Mathf.Abs(Gravity) * timeToJump;
+        //    var velocityY = Mathf.Sqrt(2 * Mathf.Abs(Gravity) * jumpMoveSpeed);
+        //    preventLocomotion = true;
+        //    currentVelocity *= 0.5f;
+        //    animator.SetBool(AnimatorParameters.IsGrounded, false);
+
+        //    //animator.SetFloat(AnimatorParameters.moveAmount, 0);
+        //    isGrounded = false;
+        //    animator.CrossFadeInFixedTime("FallTree", .12f);
+
+        //    var characterVelocity = characterController.velocity;
+
+        //    //yield return new WaitForSeconds(0.1f);
+        //    var time = 0f;
+        //    while ((time += Time.deltaTime) <= 0.1f)
+        //    {
+        //        characterController.Move(currentVelocity * 0.5f * Time.deltaTime);
+        //        yield return null;
+
+        //        if (playerController.CurrentSystemState != SystemState.Locomotion)
+        //        {
+        //            preventLocomotion = false;
+        //            yield break;
+        //        }
+        //    }
+        //    preventLocomotion = false;
+        //    ySpeed = velocityY;
+        //    //while (characterController.velocity.y <= velocityY)
+        //    //{
+        //    //    characterController.velocity.y,velocityY,1f*Time.deltaTime);
+        //    //    yield return null;
+        //    //}
+        //    //while (!isGrounded)
+        //    //{
+
+        //    //    yield return null;
+
+        //    //    if (playerController.CurrentSystemState != State)
+        //    //        yield break;
+        //    //}
+        //    //targetRotation = transform.rotation;
+        //    //playerController.IsInAir = false;
+        //    //yield return VerticalJumpLanding();
+        //    ////parkourController.IsJumping = false;
+        //    //preventLocomotion = false;
+        //}
 
         IEnumerator Landing()
         {
@@ -870,7 +924,7 @@ namespace FS_ThirdPerson
                             targetRotation = transform.rotation;
                             itemEquipper.PreventItemSwitching = false;
                         }
-                        , crossFadeTime: .1f, setMoveAmount: true,preventSystems: true);
+                        , crossFadeTime: .1f, setMoveAmount: true, preventSystems: true);
                 }
                 else
                     yield return DoLocomotionAction("Landing", crossFadeTime: .1f);
@@ -1141,7 +1195,7 @@ namespace FS_ThirdPerson
         {
             var newVelocity = (dest - transform.position).normalized * speed;
             currentVelocity = Vector3.MoveTowards(currentVelocity, newVelocity, acceleration * Time.deltaTime);
-            
+
             characterController.Move(newVelocity * Time.deltaTime);
             var characterVelocity = characterController.velocity;
             characterVelocity.y = 0;
